@@ -22,15 +22,7 @@ const PORT = process.env.PORT || 3001;
 
 
 // Konfigurasi Session
-app.use(session({
-    secret: process.env.SESSION_SECRET || '8f5d3243ccdd907092db55a28e3c1ea89293385adc0953f337ec9c974cc5522f',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 1 hari
-    }
-}));
+
 
 
 const Handlebars = require('handlebars');
@@ -85,74 +77,40 @@ const initDatabase = () => {
 initDatabase();
 
 // Password Configuration
-const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
 
 // Authentication Middleware
 const checkAuth = (req, res, next) => {
-    if (req.path === '/login' || req.path === '/auth' || req.path === '/logout') {
-        return next();
-    }
-    
-    if (req.session && req.session.authenticated) {
-        return next();
-    }
-    
-    res.redirect('/login');
+    return next(); // Selalu izinkan akses tanpa login
 };
 
 // Routes
-app.get('/', checkAuth, (req, res) => {
+app.get('/',  (req, res) => {
     res.redirect('/create');
 });
 
-app.get('/login', (req, res) => {
-    if (req.session.authenticated) {
-        return res.redirect('/');
-    }
-    res.render('login', { 
-        title: 'Login',
-        layout: 'auth'
-    });
-});
 
-app.post('/auth', (req, res) => {
-    if (req.body.password === PASSWORD) {
-        req.session.authenticated = true;
-        return res.redirect('/');
-    }
-    res.render('login', { 
-        title: 'Login',
-        error: 'Password salah!',
-        layout: 'auth'
-    });
-});
 
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
-});
+
 
 // Main App Routes
-app.get('/create', checkAuth, (req, res) => {
+app.get('/create', (req, res) => {
     res.render('create', {
         title: 'Create Shortlink',
-        activePage: 'create' // Data untuk highlight menu aktif
+        activePage: 'create'
     });
 });
 
-app.get('/manage', checkAuth, (req, res) => {
+app.get('/manage', (req, res) => {
     const db = JSON.parse(fs.readFileSync(DB_FILE));
     res.render('manage', { 
         title: 'Manage URLs',
         activePage: 'manage',
-        urls: db.urls.map(url => ({
-            ...url,
-            targetUrls: url.targetUrls || null // Pastikan properti ini ada
-        }))
+        urls: db.urls
     });
 });
 
-app.get('/stats', checkAuth, (req, res) => {
+app.get('/stats',  (req, res) => {
     const stats = JSON.parse(fs.readFileSync(STATS_FILE));
     const totalVisits = stats.statistics.length;
     const humanVisits = stats.statistics.filter(s => !s.isBot).length;
@@ -194,7 +152,7 @@ const saveSettings = (newSettings) => {
 };
 
 // Route untuk settings
-app.get('/settings', checkAuth, (req, res) => {
+app.get('/settings',  (req, res) => {
     const settings = getSettings();
     const countries = [
         { code: 'US', name: 'United States' },
@@ -214,7 +172,7 @@ app.get('/settings', checkAuth, (req, res) => {
     });
 });
 
-app.post('/api/settings', checkAuth, (req, res) => {
+app.post('/api/settings',  (req, res) => {
     try {
         const { settings } = req.body;
         const savedSettings = saveSettings({
@@ -238,7 +196,7 @@ app.post('/api/settings', checkAuth, (req, res) => {
 
 // Batch create short URLs
 // Di endpoint POST /api/shorten/batch
-app.post('/api/shorten/batch', checkAuth, async (req, res) => {
+app.post('/api/shorten/batch',  async (req, res) => {
     const { urls, randomRedirect } = req.body;
     
     if (!urls || urls.length === 0) {
@@ -273,7 +231,7 @@ app.post('/api/shorten/batch', checkAuth, async (req, res) => {
 });
 
 // Endpoint untuk menghapus URL dari random redirect
-app.delete('/api/urls/:id/remove-target', checkAuth, (req, res) => {
+app.delete('/api/urls/:id/remove-target',  (req, res) => {
     const { id } = req.params;
     const { targetUrl } = req.body;
 
@@ -328,7 +286,7 @@ app.delete('/api/urls/:id/remove-target', checkAuth, (req, res) => {
 });
 
 // API Endpoints
-app.post('/api/shorten', checkAuth, async (req, res) => {
+app.post('/api/shorten',  async (req, res) => {
     const { url, customSlug } = req.body;
     
     if (!url) {
@@ -360,7 +318,7 @@ app.post('/api/shorten', checkAuth, async (req, res) => {
     }
 });
 
-app.delete('/api/urls/:id', checkAuth, (req, res) => {
+app.delete('/api/urls/:id',  (req, res) => {
     const { id } = req.params;
     
     try {
@@ -380,7 +338,7 @@ app.delete('/api/urls/:id', checkAuth, (req, res) => {
     }
 });
 
-app.put('/api/urls/:id', checkAuth, (req, res) => {
+app.put('/api/urls/:id',  (req, res) => {
     const { id } = req.params;
     const { isActive } = req.body;
     
@@ -850,7 +808,7 @@ function isRequestFromBot(req) {
 }
 
 // Endpoint untuk reset activities
-app.post('/api/stats/reset', checkAuth, (req, res) => {
+app.post('/api/stats/reset',  (req, res) => {
     try {
         const stats = { statistics: [] };
         fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 2));
