@@ -10,7 +10,9 @@ const axios = require('axios');
 const { randomInt } = require('crypto');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Server running on port ${port}`));
+
 
 // Konfigurasi Session
 app.use(session({
@@ -76,7 +78,7 @@ const initDatabase = () => {
 initDatabase();
 
 // Password Configuration
-const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const PASSWORD = process.env.ADMIN_PASSWORD || 'siomay001';
 
 // Authentication Middleware
 const checkAuth = (req, res, next) => {
