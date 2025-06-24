@@ -1,0 +1,318 @@
+<div class="main-content">
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-cog"></i> Settings</h2>
+        </div>
+        
+        <div class="card-body">
+            <form id="settingsForm">
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" id="mobileOnly" name="mobileOnly" 
+                               {{#if settings.mobileOnly}}checked{{/if}}
+                               class="form-check-input">
+                        <label for="mobileOnly" class="form-check-label">Mobile Devices Only</label>
+                        <p class="form-text text-muted">Only allow access from mobile devices</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" id="blockBots" name="blockBots" 
+                               {{#if settings.blockBots}}checked{{/if}}
+                               class="form-check-input">
+                        <label for="blockBots" class="form-check-label">Block Bots</label>
+                        <p class="form-text text-muted">Block known bots/crawlers</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="blockRedirectUrl"><i class="fas fa-external-link-alt"></i> Block Redirect URL</label>
+                    <input type="url" id="blockRedirectUrl" name="blockRedirectUrl" 
+                           value="{{settings.blockRedirectUrl}}" 
+                           placeholder="https://example.com/blocked"
+                           class="form-control">
+                    <p class="form-text text-muted">URL to redirect blocked visitors to</p>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-globe"></i> Allowed Countries</label>
+                    <div class="countries-container">
+                        {{#each countries}}
+                        <div class="country-item">
+                            <input type="checkbox" id="country-{{code}}" name="allowedCountries" 
+                                   value="{{code}}" {{#if selected}}checked{{/if}}
+                                   class="form-check-input">
+                            <label for="country-{{code}}" class="country-label">
+                                <img src="https://cdn.ipwhois.io/flags/{{code}}.svg" alt="{{code}}" class="country-flag">
+                                {{name}} ({{code}})
+                            </label>
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+                
+                <div id="settingsResult" class="mt-3"></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary: #ff7b25;
+    --primary-light: #ff9e58;
+    --primary-dark: #e56a1a;
+    --dark: #1e1e2d;
+    --darker: #151521;
+    --light: #f8f9fa;
+    --gray: #2d2d3a;
+    --light-gray: #3a3a4a;
+    --font: 'Poppins', sans-serif;
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    min-height: 100vh;
+    background-color: var(--darker);
+    color: var(--light);
+    font-family: var(--font);
+    transition: all 0.3s;
+}
+
+.card {
+    background-color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--gray);
+}
+
+.card-header h2 {
+    color: var(--primary);
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    background-color: var(--darker);
+    border: 1px solid var(--gray);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 123, 37, 0.25);
+}
+
+.form-check-label {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.form-control {
+    background-color: var(--darker);
+    border: 1px solid var(--gray);
+    color: var(--light);
+    padding: 10px 15px;
+    border-radius: 4px;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(255, 123, 37, 0.25);
+    outline: none;
+    background-color: var(--darker);
+    color: var(--light);
+}
+
+.form-text.text-muted {
+    color: #aaa !important;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.countries-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    padding: 15px;
+    border: 1px solid var(--gray);
+    border-radius: 5px;
+    background-color: var(--darker);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.country-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background-color: var(--dark);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.country-item:hover {
+    background-color: var(--gray);
+}
+
+.country-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.country-flag {
+    width: 20px;
+    height: 15px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    font-family: var(--font);
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.alert {
+    padding: 12px 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.2);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    color: #28a745;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding-top: 70px;
+    }
+    
+    .countries-container {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .countries-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        mobileOnly: document.getElementById('mobileOnly').checked,
+        blockBots: document.getElementById('blockBots').checked,
+        blockRedirectUrl: document.getElementById('blockRedirectUrl').value,
+        allowedCountries: Array.from(
+            document.querySelectorAll('input[name="allowedCountries"]:checked')
+        ).map(el => el.value)
+    };
+    
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ settings: formData })
+        });
+        
+        const result = await response.json();
+        const resultDiv = document.getElementById('settingsResult');
+        
+        if (result.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Settings saved successfully!
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Error: ${result.error || 'Failed to save settings'}
+                </div>
+            `;
+        }
+        
+        setTimeout(() => {
+            resultDiv.innerHTML = '';
+        }, 3000);
+    } catch (error) {
+        document.getElementById('settingsResult').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Network error: ${error.message}
+            </div>
+        `;
+    }
+});
+</script>

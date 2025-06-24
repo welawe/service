@@ -1,0 +1,141 @@
+<div style="
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #1A1625;
+    padding: 20px;
+    box-sizing: border-box;
+">
+    <div style="
+        width: 100%;
+        max-width: 420px;
+        background: linear-gradient(145deg, #3D365C 0%, #2A2542 100%);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 
+                    0 5px 10px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    ">
+        <!-- Card Header -->
+        <div style="
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 152, 0, 0.2);
+            text-align: center;
+        ">
+            <h2 style="
+                margin: 0;
+                color: #FF9800;
+                font-size: 22px;
+                font-weight: 600;
+            ">
+                <i class="fas fa-link" style="margin-right: 10px;"></i>
+                Shortlink System
+            </h2>
+        </div>
+        
+        <!-- Card Body -->
+        <div style="padding: 30px;">
+            <form action="/auth" method="POST">
+                {{#if error}}
+                    <div style="
+                        padding: 12px;
+                        margin-bottom: 25px;
+                        border-radius: 6px;
+                        background-color: rgba(255, 87, 34, 0.2);
+                        border-left: 4px solid #FF5722;
+                        color: #FF8A65;
+                        font-size: 14px;
+                    ">
+                        {{error}}
+                    </div>
+                {{/if}}
+                
+                <div style="margin-bottom: 25px;">
+                    <label for="password" style="
+                        display: block;
+                        margin-bottom: 10px;
+                        color: #FF9800;
+                        font-weight: 500;
+                        font-size: 15px;
+                    ">
+                        <i class="fas fa-lock" style="margin-right: 8px;"></i> Password
+                    </label>
+                    <input type="password" id="password" name="password" required style="
+                        width: 100%;
+                        padding: 12px 15px;
+                        border: none;
+                        border-radius: 6px;
+                        background-color: rgba(255, 255, 255, 0.08);
+                        color: #FFFFFF;
+                        font-size: 15px;
+                        box-sizing: border-box;
+                        transition: all 0.3s ease;
+                        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+                        border-bottom: 2px solid transparent;
+                    ">
+                </div>
+                
+                <button type="submit" style="
+                    width: 100%;
+                    padding: 14px;
+                    border: none;
+                    border-radius: 6px;
+                    background: linear-gradient(135deg, #FF9800 0%, #FF5722 100%);
+                    color: white;
+                    font-weight: 600;
+                    font-size: 15px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+                    text-transform: uppercase;
+                    position: relative;
+                    overflow: hidden;
+                " 
+                onmouseover="this.style.boxShadow='0 6px 20px rgba(255, 152, 0, 0.4)'" 
+                onmouseout="this.style.boxShadow='0 4px 15px rgba(255, 152, 0, 0.3)'"
+                onmousedown="this.style.transform='translateY(2px)'" 
+                onmouseup="this.style.transform='translateY(0)'">
+                    <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Login
+                </button>
+            </form>
+        </div>
+        
+        <!-- Card Footer -->
+        <div style="
+            padding: 15px;
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            border-top: 1px solid rgba(255, 152, 0, 0.1);
+            background: rgba(0, 0, 0, 0.1);
+        ">
+            © 2025 Shortlink System | Admin Panel
+        </div>
+    </div>
+</div>
+
+<style>
+    input:focus {
+        outline: none;
+        background-color: rgba(255, 255, 255, 0.12) !important;
+        border-bottom: 2px solid #FF9800 !important;
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2) !important;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+    }
+    
+    button:hover {
+        animation: pulse 1.5s infinite;
+    }
+    
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+</style>

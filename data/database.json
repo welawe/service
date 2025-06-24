@@ -1,0 +1,17 @@
+{
+  "urls": [
+    {
+      "id": "c2662a7e-dbf2-4842-be61-c0426ec0fc85",
+      "originalUrl": "https://chat.deepseek.com/a/chat/s/c1d43844-832d-4557-b691-1fd6a42f98b9",
+      "shortUrl": "custom",
+      "createdAt": "2025-06-24T14:44:25.662Z",
+      "isActive": true
+    }
+  ],
+  "settings": {
+    "mobileOnly": false,
+    "blockBots": false,
+    "blockRedirectUrl": "https://chatgpt.com/?model=auto",
+    "allowedCountries": []
+  }
+}

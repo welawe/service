@@ -1,0 +1,17 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+    }
+    
+    // Active link highlighting
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+});

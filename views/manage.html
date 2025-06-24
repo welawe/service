@@ -1,0 +1,699 @@
+<div class="main-content">
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-tasks"></i> Manage URLs</h2>
+            <div class="header-actions">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search URLs..." class="form-control">
+                    <button id="searchBtn" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <select id="filterType" class="form-control">
+                        <option value="all">All Types</option>
+                        <option value="single">Single</option>
+                        <option value="batch">Batch</option>
+                        <option value="random">Random</option>
+                    </select>
+                    <select id="filterStatus" class="form-control">
+                        <option value="all">All Status</option>
+                        <option value="active">Active Only</option>
+                        <option value="inactive">Inactive Only</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover url-table">
+                    <thead>
+                        <tr>
+                            <th>Short URL</th>
+                            <th>Original URL(s)</th>
+                            <th>Created</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="urlTableBody">
+                        {{#each urls}}
+                        <tr data-id="{{id}}" data-urls="{{#if targetUrls}}{{json targetUrls}}{{else}}[]{{/if}}" 
+                            data-type="{{#if targetUrls}}{{#if randomRedirect}}random{{else}}batch{{/if}}{{else}}single{{/if}}"
+                            data-status="{{#if isActive}}active{{else}}inactive{{/if}}">
+                            <td>
+                                <a href="/{{shortUrl}}" target="_blank">/{{shortUrl}}</a>
+                                <button class="btn btn-sm btn-link copy-btn" title="Copy Short URL">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </td>
+                            <td class="original-url-cell">
+                                {{#if targetUrls}}
+                                    <span class="badge badge-pill badge-light url-count-badge">{{targetUrls.length}}</span> URLs
+                                {{else}}
+                                    <a href="{{originalUrl}}" target="_blank">{{originalUrl}}</a>
+                                {{/if}}
+                            </td>
+                            <td>{{formatDate createdAt}}</td>
+                            <td>
+                                {{#if targetUrls}}
+                                    {{#if randomRedirect}}
+                                        <span class="badge badge-info">Random</span>
+                                    {{else}}
+                                        <span class="badge badge-secondary">Batch</span>
+                                    {{/if}}
+                                {{else}}
+                                    <span class="badge badge-primary">Single</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                <select class="form-control form-control-sm status-select">
+                                    <option value="true" {{#if isActive}}selected{{/if}}>Active</option>
+                                    <option value="false" {{#unless isActive}}selected{{/unless}}>Inactive</option>
+                                </select>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    {{#if targetUrls}}
+                                    <button class="btn btn-sm btn-info view-urls-btn" title="View URLs">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    {{/if}}
+                                    <button class="btn btn-sm btn-danger delete-btn" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+                <div id="noResults" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p>No URLs found matching your criteria</p>
+                </div>
+            </div>
+            
+            <div class="table-footer">
+                <div class="showing-entries">
+                    Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> entries
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Viewing URLs -->
+<div class="modal fade" id="urlsModal" tabindex="-1" role="dialog" aria-labelledby="urlsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="urlsModalLabel">Target URLs</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>URL</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="targetUrlsList">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary: #ff7b25;
+    --primary-light: #ff9e58;
+    --primary-dark: #e56a1a;
+    --dark: #1e1e2d;
+    --darker: #151521;
+    --light: #f8f9fa;
+    --gray: #2d2d3a;
+    --light-gray: #3a3a4a;
+    --font: 'Poppins', sans-serif;
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    min-height: 100vh;
+    background-color: var(--darker);
+    color: var(--light);
+    font-family: var(--font);
+    transition: all 0.3s;
+}
+
+.card {
+    background-color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--gray);
+    background-color: var(--dark);
+    border-radius: 8px 8px 0 0;
+}
+
+.card-header h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.search-box {
+    display: flex;
+    flex-grow: 1;
+    max-width: 400px;
+}
+
+.search-box input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.search-box button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-group select {
+    min-width: 120px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 0 0 8px 8px;
+}
+
+.url-table {
+    width: 100%;
+    color: var(--light);
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.url-table thead {
+    background-color: var(--gray);
+}
+
+.url-table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.url-table td {
+    padding: 12px 15px;
+    border-top: 1px solid var(--gray);
+    vertical-align: middle;
+}
+
+.url-table tr:hover {
+    background-color: rgba(255, 123, 37, 0.1);
+}
+
+.badge {
+    font-weight: 500;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    border-radius: 12px;
+}
+
+.badge-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge-light {
+    background-color: var(--light-gray);
+    color: var(--light);
+}
+
+.url-count-badge {
+    margin-right: 5px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 5px;
+}
+
+.btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    font-family: var(--font);
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+}
+
+.btn-danger {
+    background-color: #e53e3e;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c53030;
+}
+
+.btn-secondary {
+    background-color: var(--light-gray);
+    color: var(--light);
+}
+
+.btn-secondary:hover {
+    background-color: var(--gray);
+}
+
+.btn-link {
+    color: var(--primary);
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.btn-link:hover {
+    color: var(--primary-light);
+    text-decoration: none;
+}
+
+.form-control {
+    background-color: var(--darker);
+    border: 1px solid var(--gray);
+    color: var(--light);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: var(--font);
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(255, 123, 37, 0.25);
+    outline: none;
+    background-color: var(--darker);
+    color: var(--light);
+}
+
+.form-control-sm {
+    padding: 5px 10px;
+    font-size: 0.875rem;
+}
+
+.table-footer {
+    padding: 15px;
+    color: #aaa;
+    font-size: 0.875rem;
+    background-color: var(--dark);
+    border-radius: 0 0 8px 8px;
+}
+
+.modal-content {
+    background-color: var(--dark);
+    color: var(--light);
+    border: none;
+    border-radius: 8px;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--gray);
+    background-color: var(--dark);
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--gray);
+    background-color: var(--dark);
+    border-radius: 0 0 8px 8px;
+}
+
+.close {
+    color: var(--light);
+    opacity: 0.8;
+}
+
+.close:hover {
+    color: var(--primary);
+}
+
+.text-muted {
+    color: #aaa !important;
+}
+
+#noResults {
+    color: #777;
+    background-color: var(--dark);
+}
+
+.original-url-cell {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding-top: 70px;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        max-width: 100%;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .filter-group select {
+        flex-grow: 1;
+    }
+}
+</style>
+
+<script>
+// Original JavaScript remains completely unchanged
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize counts
+    const totalCount = document.querySelectorAll('#urlTableBody tr').length;
+    document.getElementById('totalCount').textContent = totalCount;
+    document.getElementById('showingCount').textContent = totalCount;
+    
+    // Copy short URL button
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const shortUrl = this.closest('td').querySelector('a').textContent;
+            navigator.clipboard.writeText(shortUrl).then(() => {
+                const original = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    this.innerHTML = original;
+                }, 2000);
+            });
+        });
+    });
+    
+    // View URLs button
+    document.querySelectorAll('.view-urls-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const urlId = row.getAttribute('data-id');
+            const urls = JSON.parse(row.getAttribute('data-urls'));
+            const shortUrl = row.querySelector('a').textContent;
+            
+            document.getElementById('urlsModalLabel').textContent = `Target URLs for ${shortUrl}`;
+            const urlsList = document.getElementById('targetUrlsList');
+            
+            urlsList.innerHTML = urls.map((url, index) => `
+                <tr data-url="${encodeURIComponent(url)}">
+                    <td>${index + 1}</td>
+                    <td>
+                        <a href="${url}" target="_blank">${url}</a>
+                        <button class="btn btn-sm btn-link copy-url-btn" data-url="${url}">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="${url}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Visit
+                            </a>
+                            <button class="btn btn-sm btn-danger remove-target-btn" 
+                                    data-url-id="${urlId}" data-target-url="${encodeURIComponent(url)}">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.remove-target-btn').forEach(removeBtn => {
+                removeBtn.addEventListener('click', async function() {
+                    const urlId = this.getAttribute('data-url-id');
+                    const targetUrl = decodeURIComponent(this.getAttribute('data-target-url'));
+                    const row = this.closest('tr');
+                    
+                    try {
+                        const response = await fetch(`/api/urls/${urlId}/remove-target`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ targetUrl })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // Hapus baris dari tabel di modal
+                            row.remove();
+                            
+                            // Update tampilan utama
+                            const mainRow = document.querySelector(`tr[data-id="${urlId}"]`);
+                            if (mainRow) {
+                                if (data.wasDeleted) {
+                                    // Jika semua URL terhapus, hapus row utama
+                                    mainRow.remove();
+                                    $('#urlsModal').modal('hide');
+                                } else {
+                                    // Update count dan data attributes
+                                    const urlCount = data.url.targetUrls ? data.url.targetUrls.length : 1;
+                                    const urlCountBadge = mainRow.querySelector('.url-count-badge');
+                                    
+                                    if (urlCountBadge) {
+                                        urlCountBadge.textContent = urlCount;
+                                    }
+                                    
+                                    // Update data attributes
+                                    mainRow.setAttribute('data-urls', JSON.stringify(data.url.targetUrls || []));
+                                    
+                                    // Jika berubah jadi single URL
+                                    if (!data.url.targetUrls) {
+                                        const originalUrlCell = mainRow.querySelector('.original-url-cell');
+                                        if (originalUrlCell) {
+                                            originalUrlCell.innerHTML = `
+                                                <a href="${data.url.originalUrl}" target="_blank">${data.url.originalUrl}</a>
+                                            `;
+                                        }
+                                        
+                                        // Update type badge
+                                        const typeBadge = mainRow.querySelector('.badge');
+                                        if (typeBadge) {
+                                            typeBadge.className = 'badge badge-primary';
+                                            typeBadge.textContent = 'Single';
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            alert(`Error: ${data.error || 'Failed to remove URL'}`);
+                        }
+                    } catch (error) {
+                        alert(`Network error: ${error.message}`);
+                    }
+                });
+            });
+            
+            // Add copy functionality in modal
+            document.querySelectorAll('.copy-url-btn').forEach(copyBtn => {
+                copyBtn.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    navigator.clipboard.writeText(url).then(() => {
+                        const original = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            this.innerHTML = original;
+                        }, 2000);
+                    });
+                });
+            });
+            
+            $('#urlsModal').modal('show');
+        });
+    });
+    
+    // Delete URL
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const row = this.closest('tr');
+            const id = row.getAttribute('data-id');
+            
+            if (!confirm('Are you sure you want to delete this URL?')) return;
+            
+            try {
+                const response = await fetch(`/api/urls/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    row.remove();
+                    updateCounts();
+                } else {
+                    const data = await response.json();
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Network error: ${error.message}`);
+            }
+        });
+    });
+    
+    // Update status
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', async function() {
+            const row = this.closest('tr');
+            const id = row.getAttribute('data-id');
+            const isActive = this.value === 'true';
+            
+            try {
+                const response = await fetch(`/api/urls/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isActive })
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    alert(`Error: ${data.error}`);
+                    // Revert the select
+                    this.value = !isActive;
+                } else {
+                    row.setAttribute('data-status', isActive ? 'active' : 'inactive');
+                    filterUrls();
+                }
+            } catch (error) {
+                alert(`Network error: ${error.message}`);
+                this.value = !isActive;
+            }
+        });
+    });
+    
+    // Search functionality
+    document.getElementById('searchBtn').addEventListener('click', filterUrls);
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') filterUrls();
+    });
+    
+    // Filter by type
+    document.getElementById('filterType').addEventListener('change', filterUrls);
+    document.getElementById('filterStatus').addEventListener('change', filterUrls);
+    
+    function filterUrls() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filterType = document.getElementById('filterType').value;
+        const filterStatus = document.getElementById('filterStatus').value;
+        let visibleCount = 0;
+        
+        document.querySelectorAll('#urlTableBody tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const type = row.getAttribute('data-type');
+            const status = row.getAttribute('data-status');
+            
+            const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+            const matchesType = filterType === 'all' || type === filterType;
+            const matchesStatus = filterStatus === 'all' || status === filterStatus;
+            
+            if (matchesSearch && matchesType && matchesStatus) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('showingCount').textContent = visibleCount;
+        document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
+    }
+    
+    function updateCounts() {
+        const visibleCount = document.querySelectorAll('#urlTableBody tr:not([style*="display: none"])').length;
+        const totalCount = document.querySelectorAll('#urlTableBody tr').length;
+        
+        document.getElementById('showingCount').textContent = visibleCount;
+        document.getElementById('totalCount').textContent = totalCount;
+        document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
+    }
+    
+    // Initialize
+    filterUrls();
+});
+</script>

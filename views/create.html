@@ -1,0 +1,477 @@
+<div class="main-content">
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-plus-circle"></i> Create Shortlink</h2>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" id="single-tab" data-toggle="tab" href="#single">
+                        <i class="fas fa-link"></i> Single URL
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="batch-tab" data-toggle="tab" href="#batch">
+                        <i class="fas fa-list"></i> Batch URLs
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Tab Single URL -->
+                <div class="tab-pane fade show active" id="single">
+                    <form id="shortenForm">
+                        <div class="form-group">
+                            <label for="url"><i class="fas fa-link"></i> Original URL</label>
+                            <input type="url" id="url" name="url" required placeholder="https://example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="customSlug"><i class="fas fa-tag"></i> Custom Slug (optional)</label>
+                            <input type="text" id="customSlug" name="customSlug" placeholder="my-custom-link">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-magic"></i> Create Shortlink
+                        </button>
+                    </form>
+                    
+                    <div id="singleResult" class="result-container mt-3"></div>
+                </div>
+                
+                <!-- Tab Batch URLs -->
+                <div class="tab-pane fade" id="batch">
+                    <div class="form-group">
+                        <label><i class="fas fa-list"></i> Multiple URLs (1 per line)</label>
+                        <textarea id="batchUrls" class="form-control" rows="8" placeholder="https://example.com/page1
+https://example.com/page2
+https://example.com/page3"></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input type="checkbox" id="randomRedirect" class="form-check-input">
+                        <label for="randomRedirect" class="form-check-label">Random Redirect</label>
+                        <small class="form-text text-muted">When enabled, will randomly redirect to one of the URLs</small>
+                    </div>
+                    
+                    <div id="urlList" class="url-list mb-3"></div>
+                    
+                    <button id="processBatch" class="btn btn-primary">
+                        <i class="fas fa-cogs"></i> Create Shortlink
+                    </button>
+                    
+                    <div id="batchResult" class="result-container mt-3"></div>
+                </div>
+                
+                
+                    
+                    <div id="multiResult" class="result-container mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    min-height: 100vh;
+    background-color: var(--darker);
+}
+
+.card {
+    background-color: var(--dark);
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    color: var(--light);
+}
+
+.card-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--gray);
+}
+
+.card-header h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.nav-tabs {
+    border-bottom: 1px solid var(--gray);
+}
+
+.nav-tabs .nav-link {
+    color: var(--light);
+    border: none;
+    padding: 10px 15px;
+    margin-right: 5px;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: var(--gray);
+    color: var(--primary);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--primary);
+    color: var(--dark);
+    font-weight: 500;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--light);
+}
+
+.form-group input[type="url"],
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    background-color: var(--darker);
+    border: 1px solid var(--gray);
+    border-radius: 4px;
+    color: var(--light);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--dark);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.form-check-input {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
+.text-muted {
+    color: #aaa !important;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 5px;
+}
+
+.result-container {
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.2);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    color: #28a745;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+}
+
+.url-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--gray);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.url-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    background-color: var(--darker);
+    border-radius: 3px;
+}
+
+.url-item:last-child {
+    margin-bottom: 0;
+}
+
+.remove-url {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+}
+
+.multi-results {
+    margin-top: 10px;
+}
+
+.multi-result-item {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--gray);
+}
+
+.multi-result-item:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding-top: 70px;
+    }
+}
+</style>
+
+<script>
+// Single URL Form
+document.getElementById('shortenForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = document.getElementById('url').value;
+    const customSlug = document.getElementById('customSlug').value;
+    
+    try {
+        const response = await fetch('/api/shorten', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, customSlug })
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('singleResult');
+        
+        if (response.ok) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h4><i class="fas fa-check-circle"></i> Shortlink Created!</h4>
+                    <p><strong>Original URL:</strong> <a href="${url}" target="_blank">${url}</a></p>
+                    <p><strong>Short URL:</strong> <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>
+                </div>
+            `;
+            e.target.reset();
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Error: ${data.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('singleResult').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Network error: ${error.message}
+            </div>
+        `;
+    }
+});
+
+// Batch URLs Processing
+document.getElementById('batchUrls').addEventListener('input', function() {
+    const urls = this.value.split('\n').filter(url => url.trim() !== '');
+    const urlList = document.getElementById('urlList');
+    
+    urlList.innerHTML = urls.map((url, index) => `
+        <div class="url-item" data-index="${index}">
+            <span>${index + 1}. ${url}</span>
+            <button class="btn btn-sm btn-danger remove-url">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    // Add remove event listeners
+    document.querySelectorAll('.remove-url').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = this.closest('.url-item').getAttribute('data-index');
+            const urls = document.getElementById('batchUrls').value.split('\n');
+            urls.splice(index, 1);
+            document.getElementById('batchUrls').value = urls.join('\n');
+            this.closest('.url-item').remove();
+        });
+    });
+});
+
+document.getElementById('processBatch').addEventListener('click', async function() {
+    const urls = document.getElementById('batchUrls').value
+        .split('\n')
+        .filter(url => url.trim() !== '');
+    
+    const randomRedirect = document.getElementById('randomRedirect').checked;
+    
+    if (urls.length === 0) {
+        document.getElementById('batchResult').innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-circle"></i> Please enter at least one URL
+            </div>
+        `;
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/shorten/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                urls,
+                randomRedirect 
+            })
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('batchResult');
+        
+        if (response.ok) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h4><i class="fas fa-check-circle"></i> Shortlink Created!</h4>
+                    <p><strong>Type:</strong> ${randomRedirect ? 'Random Redirect' : 'Batch'}</p>
+                    <p><strong>Short URL:</strong> <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>
+                    <div class="target-urls">
+                        <p><strong>Target URLs:</strong></p>
+                        <ul>
+                            ${data.url.targetUrls.map(url => `
+                                <li><a href="${url}" target="_blank">${url}</a></li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            document.getElementById('batchUrls').value = '';
+            document.getElementById('randomRedirect').checked = false;
+            document.getElementById('urlList').innerHTML = '';
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Error: ${data.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('batchResult').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Network error: ${error.message}
+            </div>
+        `;
+    }
+});
+
+// Multiple Shortlinks from 1 URL
+document.getElementById('multiShortForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = document.getElementById('multiUrl').value;
+    const count = parseInt(document.getElementById('shortCount').value);
+    
+    try {
+        const response = await fetch('/api/shorten/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ singleUrl: url, count })
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('multiResult');
+        
+        if (response.ok) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h4><i class="fas fa-check-circle"></i> ${count} Shortlinks Created!</h4>
+                    <p><strong>Original URL:</strong> <a href="${url}" target="_blank">${url}</a></p>
+                    <div class="multi-results">
+                        ${data.results.map((result, index) => `
+                            <div class="multi-result-item">
+                                <p><strong>Short ${index + 1}:</strong> <a href="${result.shortUrl}" target="_blank">${result.shortUrl}</a></p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            e.target.reset();
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Error: ${data.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('multiResult').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Network error: ${error.message}
+            </div>
+        `;
+    }
+});
+
+// Tab functionality
+document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        const tabId = this.getAttribute('href');
+        
+        // Hide all tab panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('show', 'active');
+        });
+        
+        // Show selected tab pane
+        document.querySelector(tabId).classList.add('show', 'active');
+        
+        // Update active tab
+        document.querySelectorAll('.nav-tabs .nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        this.classList.add('active');
+    });
+});
+</script>
