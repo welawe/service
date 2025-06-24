@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const exphbs = require('express-handlebars');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -23,32 +22,10 @@ app.use(session({
     }
 }));
 
-
-const Handlebars = require('handlebars');
-Handlebars.registerHelper('json', function(context) {
-    return JSON.stringify(context);
-});
-
-// Setup View Engine dengan Handlebars
-app.engine('html', exphbs.engine({
-    extname: '.html',
-    defaultLayout: 'main',
-    layoutsDir: path.join(__dirname, 'views/layouts'),
-    partialsDir: path.join(__dirname, 'views/partials'),
-    helpers: {
-    eq: (v1, v2) => v1 === v2,
-    formatDate: (dateString) => {
-        return new Date(dateString).toLocaleString();
-    }
-}
-}));
-app.set('view engine', 'html');
-app.set('views', path.join(__dirname, 'views'));
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(useragent.express());
 
 // Database Configuration
@@ -80,7 +57,7 @@ const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Authentication Middleware
 const checkAuth = (req, res, next) => {
-    if (req.path === '/login' || req.path === '/auth' || req.path === '/logout') {
+    if (req.path === '/login' || req.path === '/auth' || req.path === '/logout' || req.path.startsWith('/public')) {
         return next();
     }
     
@@ -93,17 +70,14 @@ const checkAuth = (req, res, next) => {
 
 // Routes
 app.get('/', checkAuth, (req, res) => {
-    res.redirect('/create');
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/login', (req, res) => {
     if (req.session.authenticated) {
         return res.redirect('/');
     }
-    res.render('login', { 
-        title: 'Login',
-        layout: 'auth'
-    });
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.post('/auth', (req, res) => {
@@ -111,11 +85,18 @@ app.post('/auth', (req, res) => {
         req.session.authenticated = true;
         return res.redirect('/');
     }
-    res.render('login', { 
-        title: 'Login',
-        error: 'Password salah!',
-        layout: 'auth'
-    });
+    res.send(`
+        <html>
+            <body>
+                <h1>Login</h1>
+                <p style="color:red">Password salah!</p>
+                <form method="post" action="/auth">
+                    <input type="password" name="password" placeholder="Password">
+                    <button type="submit">Login</button>
+                </form>
+            </body>
+        </html>
+    `);
 });
 
 app.get('/logout', (req, res) => {
@@ -125,43 +106,33 @@ app.get('/logout', (req, res) => {
 
 // Main App Routes
 app.get('/create', checkAuth, (req, res) => {
-    res.render('create', {
-        title: 'Create Shortlink',
-        activePage: 'create' // Data untuk highlight menu aktif
-    });
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/manage', checkAuth, (req, res) => {
+// Di bagian routes, ganti endpoint /manage dan /stats dengan ini:
+
+app.get('/api/urls', checkAuth, (req, res) => {
     const db = JSON.parse(fs.readFileSync(DB_FILE));
-    res.render('manage', { 
-        title: 'Manage URLs',
-        activePage: 'manage',
-        urls: db.urls.map(url => ({
-            ...url,
-            targetUrls: url.targetUrls || null // Pastikan properti ini ada
-        }))
-    });
+    res.json(db.urls);
 });
 
-app.get('/stats', checkAuth, (req, res) => {
+app.get('/api/stats', checkAuth, (req, res) => {
     const stats = JSON.parse(fs.readFileSync(STATS_FILE));
-    const totalVisits = stats.statistics.length;
-    const humanVisits = stats.statistics.filter(s => !s.isBot).length;
-    const botVisits = stats.statistics.filter(s => s.isBot).length;
-    const blockedVisits = stats.statistics.filter(s => s.blocked).length;
-    
-    res.render('stats', { 
-        title: 'Statistics',
-        activePage: 'stats',
-        totalVisits,
-        humanVisits,
-        botVisits,
-        blockedVisits,
+    res.json({
+        totalVisits: stats.statistics.length,
+        humanVisits: stats.statistics.filter(s => !s.isBot).length,
+        botVisits: stats.statistics.filter(s => s.isBot).length,
+        blockedVisits: stats.statistics.filter(s => s.blocked).length,
         recentActivities: stats.statistics.slice(-10).reverse()
     });
 });
 
-// ... (bagian require dan setup awal tetap sama)
+// Tambahkan middleware CORS di bagian atas setelah session middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
 // Fungsi untuk baca/simpan settings
 const getSettings = () => {
@@ -188,15 +159,18 @@ const saveSettings = (newSettings) => {
 app.get('/settings', checkAuth, (req, res) => {
     const settings = getSettings();
     const countries = [
-        { code: 'US', name: 'United States' },
-        { code: 'ID', name: 'Indonesia' },
-        { code: 'SG', name: 'Singapore' },
-        // Tambahkan negara lain sesuai kebutuhan
-    ];
+    { code: 'US', name: 'United States' },
+    { code: 'CA', name: 'Canada' },
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'JP', name: 'Japan' },
+    { code: 'AU', name: 'Australia' },
+    { code: 'DE', name: 'Germany' },
+    { code: 'ID', name: 'Indonesia' },
+    { code: 'SG', name: 'Singapore' },
+    // Anda bisa menambahkan lebih banyak negara di sini
+];
     
-    res.render('settings', {
-        title: 'Settings',
-        activePage: 'settings',
+    res.json({
         settings,
         countries: countries.map(country => ({
             ...country,
@@ -228,7 +202,6 @@ app.post('/api/settings', checkAuth, (req, res) => {
 });
 
 // Batch create short URLs
-// Di endpoint POST /api/shorten/batch
 app.post('/api/shorten/batch', checkAuth, async (req, res) => {
     const { urls, randomRedirect } = req.body;
     
@@ -391,8 +364,6 @@ app.put('/api/urls/:id', checkAuth, (req, res) => {
     }
 });
 
-
-
 // Short URL Redirect
 app.get('/:slug', async (req, res) => {
     try {
@@ -400,10 +371,14 @@ app.get('/:slug', async (req, res) => {
         const url = db.urls.find(u => u.shortUrl === req.params.slug);
         
         if (!url || !url.isActive) {
-            return res.status(404).render('error', {
-                title: 'Error',
-                message: 'URL tidak ditemukan atau tidak aktif'
-            });
+            return res.status(404).send(`
+                <html>
+                    <body>
+                        <h1>Error</h1>
+                        <p>URL tidak ditemukan atau tidak aktif</p>
+                    </body>
+                </html>
+            `);
         }
 
         // Handle redirect types
@@ -527,10 +502,14 @@ app.get('/:slug', async (req, res) => {
             if (settings.blockRedirectUrl) {
                 return res.redirect(settings.blockRedirectUrl);
             }
-            return res.status(403).render('error', {
-                title: 'Akses Ditolak',
-                message: `Akses dibatasi: ${blockReason}`
-            });
+            return res.status(403).send(`
+                <html>
+                    <body>
+                        <h1>Akses Ditolak</h1>
+                        <p>Akses dibatasi: ${blockReason}</p>
+                    </body>
+                </html>
+            `);
         }
         
         // Redirect to original URL
@@ -539,16 +518,75 @@ app.get('/:slug', async (req, res) => {
         }
         
         // Fallback
-        return res.status(404).render('error', {
-            title: 'Error',
-            message: 'URL tujuan tidak valid'
-        });
+        return res.status(404).send(`
+            <html>
+                <body>
+                    <h1>Error</h1>
+                    <p>URL tujuan tidak valid</p>
+                </body>
+            </html>
+        `);
         
     } catch (error) {
         console.error('Error dalam redirect:', error);
-        return res.status(500).render('error', {
-            title: 'Server Error',
-            message: 'Terjadi kesalahan server'
+        return res.status(500).send(`
+            <html>
+                <body>
+                    <h1>Server Error</h1>
+                    <p>Terjadi kesalahan server</p>
+                </body>
+            </html>
+        `);
+    }
+});
+
+// Di bagian routes app.js, tambahkan endpoint ini:
+app.delete('/api/urls/:id/remove-target', checkAuth, (req, res) => {
+    const { id } = req.params;
+    const { targetUrl } = req.body;
+
+    try {
+        const db = JSON.parse(fs.readFileSync(DB_FILE));
+        const urlIndex = db.urls.findIndex(u => u.id === id);
+        
+        if (urlIndex === -1) {
+            return res.status(404).json({ error: 'URL not found' });
+        }
+
+        const url = db.urls[urlIndex];
+        
+        if (!url.targetUrls || !Array.isArray(url.targetUrls)) {
+            return res.status(400).json({ error: 'Not a batch/random URL' });
+        }
+
+        // Filter out the target URL
+        url.targetUrls = url.targetUrls.filter(u => u !== targetUrl);
+
+        // Jika hanya tersisa 1 URL, ubah menjadi single URL
+        if (url.targetUrls.length === 1) {
+            db.urls[urlIndex] = {
+                ...url,
+                originalUrl: url.targetUrls[0],
+                targetUrls: undefined,
+                randomRedirect: undefined,
+                urlType: undefined
+            };
+        } 
+        // Jika habis, hapus seluruhnya
+        else if (url.targetUrls.length === 0) {
+            db.urls.splice(urlIndex, 1);
+        }
+
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+        
+        res.json({ 
+            success: true,
+            url: db.urls[urlIndex] // Return URL yang sudah diupdate
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message 
         });
     }
 });
@@ -680,18 +718,17 @@ function isRequestFromBot(req) {
     }
 
     // Additional WHOIS/DNS specific checks
-    // Additional WHOIS/DNS specific checks
-   const whoisDnsPatterns = [
-    'whois', 'rdap', 'domain', 'dns', 'nameserver',
-    'ns-check', 'zone-check', 'tld-verify'
-];
+    const whoisDnsPatterns = [
+        'whois', 'rdap', 'domain', 'dns', 'nameserver',
+        'ns-check', 'zone-check', 'tld-verify'
+    ];
 
-   const isWhoisDnsCheck = whoisDnsPatterns.some(pattern => 
-    userAgent.includes(pattern) ||
-    req.path.includes(pattern) ||
-    ('whois' in req.query) ||
-    ('dns' in req.query)
-);
+    const isWhoisDnsCheck = whoisDnsPatterns.some(pattern => 
+        userAgent.includes(pattern) ||
+        req.path.includes(pattern) ||
+        ('whois' in req.query) ||
+        ('dns' in req.query)
+    );
 
     if (isWhoisDnsCheck) {
         return true;
@@ -699,23 +736,23 @@ function isRequestFromBot(req) {
     
     // Anti-Phishing Communities
     const antiPhishingCommunities = [
-    'apwg', 'anti-phishing', 'phish-report', 'phishlabs',
-    'cybercrime-tracker', 'abuseipdb', 'malware-hunter',
-    'spamhaus', 'surbl', 'uribl', 'dshield', 'shadowserver',
-    'team-cymru', 'threatstop', 'threatcrowd', 'alienvault',
-    'talosintelligence', 'fireeye', 'crowdstrike', 'paloalto',
-    'proofpoint-threat', 'cyren', 'f-secure-labs', 'kaspersky-lab'
-];
+        'apwg', 'anti-phishing', 'phish-report', 'phishlabs',
+        'cybercrime-tracker', 'abuseipdb', 'malware-hunter',
+        'spamhaus', 'surbl', 'uribl', 'dshield', 'shadowserver',
+        'team-cymru', 'threatstop', 'threatcrowd', 'alienvault',
+        'talosintelligence', 'fireeye', 'crowdstrike', 'paloalto',
+        'proofpoint-threat', 'cyren', 'f-secure-labs', 'kaspersky-lab'
+    ];
 
-// Domain and DNS Providers
-const domainDnsProviders = [
-    'cloudflare', 'akamai', 'fastly', 'aws route 53', 'google domains',
-    'godaddy dns', 'namecheap dns', 'dyn', 'dnsmadeeasy', 'zerigo',
-    'ns1', 'ultradns', 'azure dns', 'cloudns', 'he.net', 'linode dns',
-    'digitalocean dns', 'vultr dns', 'ovh dns', 'alibaba cloud dns',
-    'rackspace dns', 'softlayer dns', 'verisign dns', 'neustar dns',
-    'dnsimple', 'pointdns', 'constellix', 'nsone', 'edgedns'
-];
+    // Domain and DNS Providers
+    const domainDnsProviders = [
+        'cloudflare', 'akamai', 'fastly', 'aws route 53', 'google domains',
+        'godaddy dns', 'namecheap dns', 'dyn', 'dnsmadeeasy', 'zerigo',
+        'ns1', 'ultradns', 'azure dns', 'cloudns', 'he.net', 'linode dns',
+        'digitalocean dns', 'vultr dns', 'ovh dns', 'alibaba cloud dns',
+        'rackspace dns', 'softlayer dns', 'verisign dns', 'neustar dns',
+        'dnsimple', 'pointdns', 'constellix', 'nsone', 'edgedns'
+    ];
     
     // Common bot patterns
     const botPatterns = [
@@ -868,10 +905,14 @@ app.post('/api/stats/reset', checkAuth, (req, res) => {
 // Error Handling
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).render('error', {
-        title: 'Error',
-        message: 'Something went wrong!'
-    });
+    res.status(500).send(`
+        <html>
+            <body>
+                <h1>Error</h1>
+                <p>Something went wrong!</p>
+            </body>
+        </html>
+    `);
 });
 
 // Start server
