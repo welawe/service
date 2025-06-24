@@ -9,9 +9,18 @@ const useragent = require('express-useragent');
 const axios = require('axios');
 const { randomInt } = require('crypto');
 
+
 const app = express();
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+
+// Middleware dan route Anda di sini...
+
+// ... semua konfigurasi dan routing
+
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 
 // Konfigurasi Session
@@ -78,7 +87,7 @@ const initDatabase = () => {
 initDatabase();
 
 // Password Configuration
-const PASSWORD = process.env.ADMIN_PASSWORD || 'siomay001';
+const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Authentication Middleware
 const checkAuth = (req, res, next) => {
